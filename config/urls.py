@@ -8,6 +8,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include('home.urls')),
     # Add your app URLs here
     # path('', include('your_app.urls')),
 ]
