@@ -4,7 +4,10 @@ Django settings for config project.
 
 from pathlib import Path
 import os
+from decouple import config
+
 from storages.backends.s3boto3 import S3Boto3Storage
+
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -38,7 +41,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    #'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -76,26 +79,34 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # postgresql://user:password@host:port/dbname
 # Or set individual variables: DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 
-#DB_NAME = config('DB_NAME', default=None)
-#DB_USER = config('DB_USER', default=None)
-#DB_PASSWORD = config('DB_PASSWORD', default=None)
-#DB_HOST = config('DB_HOST', default='localhost')
-#DB_PORT = config('DB_PORT', default='5432')
+DB_NAME = config('DB_NAME', default=None)
+DB_USER = config('DB_USER', default=None)
+DB_PASSWORD = config('DB_PASSWORD', default=None)
+DB_HOST = config('DB_HOST', default='localhost')
+DB_PORT = config('DB_PORT', default='5432')
 
 # Use PostgreSQL if credentials are provided, otherwise fall back to SQLite for local development
-#if DB_NAME and DB_USER and DB_PASSWORD:
-    #DATABASES = {
-        #'default': {
-            #'ENGINE': 'django.db.backends.postgresql',
-        #'NAME': DB_NAME,
-        #'USER': DB_USER,
-        #'PASSWORD': DB_PASSWORD,
-        #'HOST': DB_HOST,
-        #'PORT': DB_PORT,
-        #'OPTIONS': {
-            #'connect_timeout': 10,
-        #},
-    #}
+if DB_NAME and DB_USER and DB_PASSWORD:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+        'NAME': DB_NAME,
+        'USER': DB_USER,
+        'PASSWORD': DB_PASSWORD,
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
+        'OPTIONS': {
+            'connect_timeout': 10,
+        },
+    }
+}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -132,33 +143,59 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
+
 USE_S3 = os.getenv('USE_S3') == 'TRUE'
 
 if USE_S3:
+    
     # aws settings
     AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
     AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
     AWS_DEFAULT_ACL = 'public-read'
     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+    AWS_S3_STATIC_PARAMETERS = {'CacheControl': 'max-age=31536000'}
+    AWS_S3_MEDIA_PARAMETERS = {'CacheControl': 'max-age=86400'}
+    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_S3_VERIFY = True
+    STATICFILES_LOCATION = 'static'
+    MEDIAFILES_LOCATION = 'media'
+
+    if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME]):
+        raise ValueError("AWS credentials must be set when USE_S3=True")
+
+    # Define custom storage classes for static and media files
+    class StaticStorage(S3Boto3Storage):
+        location = STATICFILES_LOCATION
+        default_acl = 'public-read'        
+
+    class MediaStorage(S3Boto3Storage):
+        location = MEDIAFILES_LOCATION
+        default_acl = 'public-read'
+        file_overwrite = False
+
     # s3 static settings
-    AWS_LOCATION = 'static'
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATICFILES_LOCATION}/'
+    STATICFILES_STORAGE = 'config.settings.StaticStorage'
+    DEFAULT_FILE_STORAGE = 'config.settings.MediaStorage'  # For user uploaded files
+    # s3 media settings
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{MEDIAFILES_LOCATION}/'
 else:
-    STATIC_URL = 'home/staticfiles/'
+    STATIC_URL ='/static/'
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    MEDIA_URL = '/mediafiles/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
 
-# Media files
-MEDIA_URL = '/mediafiles/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
+
 
 
 # WhiteNoise configuration for static files on Vercel
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+#STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

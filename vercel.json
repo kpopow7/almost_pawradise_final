@@ -11,6 +11,7 @@
       "src": "/(.*)",
       "dest": "vercel_handler.py"
     }
-  ]
+  ],
+  "buildCommand": "python manage.py collectstatic --noinput"
 }
 

@@ -12,5 +12,9 @@ sys.path.insert(0, os.path.dirname(__file__))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 # Get the WSGI application
-application = get_wsgi_application()
-
+try:
+    application = get_wsgi_application()
+except Exception as e:
+    import logging
+    logging.error(f"Failed to initialize Django: {e}")
+    raise
