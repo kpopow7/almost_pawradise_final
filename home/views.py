@@ -9,7 +9,6 @@ from .models import CustomUser, Pet, Profile, Photo
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse, reverse_lazy   
 from django.contrib.auth.decorators import user_passes_test
 # Create your views here.
 
@@ -43,7 +42,7 @@ class ImageListView(LoginRequiredMixin, ListView):
         return Photo.objects.select_related('pet_id').all()
 
 
-@login_required(login_url=reverse('login'))
+@login_required(login_url='/login/')
 @user_passes_test(lambda u: u.is_authenticated)
 def my_profile(request):
     if request.method == 'POST':
@@ -54,7 +53,7 @@ def my_profile(request):
             u_form.save()
             p_form.save()
             messages.success(request, f'Your account has been updated!')
-            return redirect('/my_profile')
+            return redirect('/my_profile/')
     else:
         u_form = CustomUserChangeForm(instance=request.user)
         p_form = ProfileUpdateForm(instance=request.user.profile)
@@ -66,16 +65,16 @@ def my_profile(request):
        
     return render(request, 'home/my_profile.html', context)
 
-@login_required(login_url=reverse('login'))
+@login_required(login_url='/login/')
 @user_passes_test(lambda u: u.is_authenticated)
 def my_pets(request):
     return render(request, 'home/my_pets.html')
 
-@login_required(login_url=reverse('login'))
+@login_required(login_url='/login/')
 def my_bookings(request):
     return render(request, 'home/my_bookings.html')
 
-@login_required(login_url=reverse('login'))
+@login_required(login_url='/login/')
 @user_passes_test(lambda u: u.is_authenticated)
 def image_upload_view(request):
     if request.method == 'POST':
@@ -83,7 +82,7 @@ def image_upload_view(request):
         if form.is_valid():
             form.save()
         messages.success(request, 'Image uploaded successfully')
-        return redirect('photo_gallery')
+        return redirect('/photo_gallery/')
     else:
         form = ImageForm()
         return render(request, 'home/photo_gallery.html', {'form': form})
@@ -97,7 +96,7 @@ def login_view(request):
         user = authenticate(username = username, password = password)  #fixed this line and below per cursor recommendation
         if not user: 
             messages.error(request, "Invalid username or password")
-            return redirect('home/login/')
+            return redirect('/login/')
         login(request, user)
         return redirect('/')
     return render(request, 'home/login.html')
@@ -110,7 +109,7 @@ def register_view(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Account Created! You may now login')
-            return redirect('/login')
+            return redirect('/login/')
         else:
             messages.error(request, "Invalid username or password")
     else:
@@ -122,7 +121,7 @@ def logout_view(request):
     if request.method == 'POST':
         logout(request)
         messages.success(request, 'You have been logged out')
-        return redirect('login')
+        return redirect('/login/')
     return render(request, 'home/logout.html')
     
 #updating this code per cursor recommendation
@@ -158,7 +157,7 @@ class new_pet(LoginRequiredMixin, CreateView):
     model = Pet
     template_name = 'new_pet.html'
     fields = '__all__'
-    success_url = reverse_lazy('my_profile')
+    success_url = '/my_profile/'
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
@@ -171,7 +170,7 @@ class PetUpdateView(LoginRequiredMixin, UpdateView):
     template_name = 'home/new_pet.html'
     fields = ['name', 'pet_type', 'breed', 'birthdate', 'on_meds', 'pet_image']
     pk_url_kwarg = 'pk'
-    success_url = reverse_lazy('my_pets')
+    success_url = '/my_pets/'
 
     def form_valid(self, form):
         form.save()
@@ -183,7 +182,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     model = Profile
     template_name = 'home/my_profile.html'
     fields = '__all__'
-    success_url = reverse_lazy('my_profile')
+    success_url = '/my_profile/'
 
     def form_valid(self, form):
         form.save()
@@ -194,7 +193,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 class PetDeleteView(LoginRequiredMixin, DeleteView):
     model = Pet
     template_name = 'home/my_pets.html'
-    success_url = reverse_lazy('my_pets')
+    success_url = '/my_pets/'
 
     def form_valid(self, form):
         messages.success(self.request, 'The pet was successfully deleted')

@@ -178,8 +178,8 @@ if USE_S3:
 
     # s3 static settings
     STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATICFILES_LOCATION}/'
-    STATICFILES_STORAGE = 'config.settings.StaticStorage'
-    DEFAULT_FILE_STORAGE = 'config.settings.MediaStorage'  # For user uploaded files
+    STATICFILES_STORAGE = StaticStorage
+    DEFAULT_FILE_STORAGE = MediaStorage  # For user uploaded files
     # s3 media settings
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{MEDIAFILES_LOCATION}/'
 else:

@@ -2,8 +2,8 @@ from django.contrib import admin
 from .models import CustomUser, Pet, Stay, Photo, Profile
 from .forms import CustomUserCreationForm, CustomUserChangeForm
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.models import Group
-from django.contrib.auth.models import Permission
+#from django.contrib.auth.models import Group
+#from django.contrib.auth.models import Permission
 # Register your models here.
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
@@ -69,11 +69,11 @@ admin.site.register(Photo, PhotoAdmin)
 class ProfileAdmin(admin.ModelAdmin):
     list_select_related = ('user',)
     list_prefetch_related = ('user',)
-    list_display = ('user', 'bio', 'location')
-    list_filter = ('user', 'location')
-    search_fields = ('user__username', 'bio', 'location')
+    list_display = ('user', 'city', 'zip')
+    list_filter = ('user', 'city', 'zip')
+    search_fields = ('user__username')
     ordering = ('user',)
     list_per_page = 10
 admin.site.register(Profile, ProfileAdmin)
-admin.site.register(Group)
-admin.site.register(Permission)
+#admin.site.register(Group)
+#admin.site.register(Permission)
